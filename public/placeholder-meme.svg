@@ -1,0 +1,8 @@
+<!-- Placeholder SVG for failed meme images -->
+<svg width="400" height="256" viewBox="0 0 400 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="256" fill="#f3f4f6"/>
+  <circle cx="150" cy="100" r="20" fill="#d1d5db"/>
+  <circle cx="250" cy="100" r="20" fill="#d1d5db"/>
+  <path d="M120 160 Q200 200 280 160" stroke="#d1d5db" stroke-width="4" fill="none"/>
+  <text x="200" y="200" text-anchor="middle" fill="#9ca3af" font-family="Arial" font-size="14">Image not found</text>
+</svg>

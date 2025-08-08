@@ -1,0 +1,80 @@
+{
+  "name": "Meme Database",
+  "short_name": "MemeDB",
+  "description": "A modern meme database for storing, organizing, and sharing your favorite memes",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#00FF88",
+  "background_color": "#00FF88",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["entertainment", "social", "utilities"],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "image",
+          "accept": ["image/*"]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/upload",
+      "accept": {
+        "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"]
+      }
+    }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "Upload Meme",
+      "short_name": "Upload",
+      "description": "Upload a new meme to your collection",
+      "url": "/upload",
+      "icons": [
+        {
+          "src": "/favicon.ico",
+          "sizes": "16x16 32x32 48x48"
+        }
+      ]
+    },
+    {
+      "name": "Browse Memes",
+      "short_name": "Browse", 
+      "description": "Browse your meme collection",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/favicon.ico",
+          "sizes": "16x16 32x32 48x48"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}
