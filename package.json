@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/update-bookmarklet.js && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "update-bookmarklet": "node scripts/update-bookmarklet.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
