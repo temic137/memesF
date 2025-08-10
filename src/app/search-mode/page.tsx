@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Meme, SearchQuery } from '@/types/meme';
 import { getMemes, searchMemes } from '@/lib/api';
-import { Search, X, TrendingUp, Shuffle, Clock, Grab } from 'lucide-react';
+import { Search, X, Grab } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 
 function MemeSearchMode() {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Filter, ChevronDown, Tag, Zap, Sparkles, TrendingUp } from 'lucide-react';
-import { getAllAvailableTags, getTagsByCategory, getRelatedTags, getTagSynonyms } from '@/lib/autoTag';
+import { getAllAvailableTags } from '@/lib/autoTag';
 
 interface SearchFiltersProps {
   onSearch: (query: string) => void;
@@ -20,14 +20,14 @@ const SEARCH_HINTS = [
   'Search "wholesome" content'
 ];
 
-const SearchFilters: React.FC<SearchFiltersProps> = ({ onSearch, onClear, onCategoryFilter, onSortChange }) => {
+const SearchFilters: React.FC<SearchFiltersProps> = ({ onSearch, onClear, onCategoryFilter }) => {
   const [query, setQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredTags, setFilteredTags] = useState<string[]>([]);
   const [currentHint, setCurrentHint] = useState(0);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('relevance');
+  const [sortBy] = useState<string>('relevance');
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -118,25 +118,25 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onSearch, onClear, onCate
     onCategoryFilter?.(category);
   };
 
-  const handleSortChange = (sort: string) => {
-    setSortBy(sort);
-    onSortChange?.(sort);
-  };
+  // const handleSortChange = (sort: string) => {
+  //   setSortBy(sort);
+  //   onSortChange?.(sort);
+  // };
 
-  const getCategoryTags = (category: string) => {
-    switch (category) {
-      case 'templates':
-        return getTagsByCategory('templates');
-      case 'emotions':
-        return getTagsByCategory('emotions');
-      case 'topics':
-        return getTagsByCategory('topics');
-      case 'relatable':
-        return getTagsByCategory('relatable');
-      default:
-        return [];
-    }
-  };
+  // const getCategoryTags = (category: string) => {
+  //   switch (category) {
+  //     case 'templates':
+  //       return getTagsByCategory('templates');
+  //     case 'emotions':
+  //       return getTagsByCategory('emotions');
+  //     case 'topics':
+  //       return getTagsByCategory('topics');
+  //     case 'relatable':
+  //       return getTagsByCategory('relatable');
+  //     default:
+  //       return [];
+  //   }
+  // };
 
   return (
     <div className="w-full space-y-4" ref={searchRef}>

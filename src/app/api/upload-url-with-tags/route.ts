@@ -85,10 +85,9 @@ export async function POST(request: NextRequest) {
       console.log('🎯 Using AI-generated tags only (no generic metadata)');
     } else {
       // AI analysis failed - extract domain for minimal context
-      let domain = 'web';
       if (source_url) {
         try {
-          domain = new URL(source_url).hostname.replace('www.', '');
+          new URL(source_url).hostname.replace('www.', '');
         } catch {
           // Invalid URL, keep default
         }

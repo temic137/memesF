@@ -5,7 +5,7 @@ import { Meme, SearchQuery } from '@/types/meme';
 import { getMemes, searchMemes, deleteMeme, healthCheck } from '@/lib/api';
 import dynamic from 'next/dynamic';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
-import { AlertCircle, Upload, Bookmark } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import MemeCard from '@/components/MemeCard';
 

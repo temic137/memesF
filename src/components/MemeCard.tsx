@@ -2,7 +2,7 @@
 
 import { useState, memo } from 'react';
 import { Meme } from '@/types/meme';
-import { formatDate, getImageUrl } from '@/lib/utils';
+import { getImageUrl } from '@/lib/utils';
 import { Trash2, Eye } from 'lucide-react';
 import Image from 'next/image';
 import FullScreenMeme from './FullScreenMeme';

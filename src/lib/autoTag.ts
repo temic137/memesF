@@ -415,8 +415,8 @@ export function suggestAdditionalTags(existingTags: string[]): string[] {
 export function getQuickTagSuggestions(): string[] {
   // Return high-weight tags from hierarchy for quick selection
   const highPriorityTags = Object.entries(TAG_HIERARCHY)
-    .filter(([_, category]) => category.weight >= 0.8)
-    .map(([tag, _]) => tag)
+    .filter(([, category]) => category.weight >= 0.8)
+    .map(([tag]) => tag)
     .slice(0, 10);
   
   return [...highPriorityTags, ...TRENDING_TAGS.slice(0, 5)];
@@ -473,6 +473,6 @@ export function getTagsByCategory(category: 'templates' | 'emotions' | 'topics' 
   const targetWeight = categoryWeights[category];
   
   return Object.entries(TAG_HIERARCHY)
-    .filter(([_, tagCategory]) => Math.abs(tagCategory.weight - targetWeight) < 0.1)
-    .map(([tag, _]) => tag);
+    .filter(([, tagCategory]) => Math.abs(tagCategory.weight - targetWeight) < 0.1)
+    .map(([tag]) => tag);
 }

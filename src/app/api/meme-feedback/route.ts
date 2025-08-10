@@ -180,7 +180,7 @@ function updateLearningPatterns(feedback: FeedbackData): void {
 }
 
 // Generate insights from collected feedback
-function generateLearningInsights(): any {
+function generateLearningInsights(): Record<string, unknown> {
   if (feedbackStorage.length === 0) {
     return { message: 'No feedback data available yet' };
   }
@@ -228,7 +228,7 @@ function generateLearningInsights(): any {
 }
 
 // Get common feedback patterns
-function getCommonFeedbackPatterns(): any {
+function getCommonFeedbackPatterns(): Record<string, unknown> {
   const patterns = feedbackStorage
     .flatMap(f => f.improvements.common_patterns)
     .reduce((acc, pattern) => {
