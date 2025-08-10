@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
             }
           } catch (error) {
             console.error('Upload error:', error);
-            showNotification('❌ Failed to save meme: ' + error.message, '#FF4444');
+            showNotification('❌ Failed to save meme: ' + (error instanceof Error ? error.message : String(error)), '#FF4444');
           }
         } else {
           showNotification('❌ Please drop an image file', '#FF4444');

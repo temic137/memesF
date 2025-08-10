@@ -90,11 +90,11 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('⚠️ Auto-tagging failed, using fallback tags:', error);
       console.error('⚠️ Full error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : 'Unknown'
       });
-      analysisDetails = `Fallback used: ${error.message}`;
+      analysisDetails = `Fallback used: ${error instanceof Error ? error.message : String(error)}`;
       
       // Provide meaningful fallback tags when AI analysis fails
       const meaningfulFallbacks = ['meme', 'funny', 'image'];
