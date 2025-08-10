@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     backendFormData.append('context', context);
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001';
-    const uploadResponse = await fetch(`${API_BASE_URL}/api/upload`, {
+    const uploadResponse = await fetch(`${API_BASE_URL}/api/memes/upload`, {
       method: 'POST',
       body: backendFormData,
     });

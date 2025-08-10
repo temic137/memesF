@@ -4,13 +4,29 @@
 (function() {
     'use strict';
     
-    // Configuration
-    const CONFIG = {
-        apiBaseUrl: 'http://127.0.0.1:3001',
-        frontendBaseUrl: 'http://localhost:3000',
-        overlayId: 'memedb-overlay',
-        version: '2.0'
-    };
+    // Dynamic Configuration - Detect URLs at runtime
+    // Smart URL detection based on current environment
+    const CONFIG = (() => {
+        // If we're running locally, use localhost
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return {
+                apiBaseUrl: 'http://localhost:3001',
+                frontendBaseUrl: 'http://localhost:3000',
+                overlayId: 'memedb-overlay',
+                version: '2.0'
+            };
+        }
+        
+        // For production, use the same frontend URL as API for now
+        // This will need to be updated when backend is deployed separately
+        const productionFrontend = 'https://memes-f.vercel.app';
+        return {
+            apiBaseUrl: productionFrontend, // Backend API calls will go through frontend proxy
+            frontendBaseUrl: productionFrontend,
+            overlayId: 'memedb-overlay',
+            version: '2.0'
+        };
+    })();
     
     // Global variables
     let currentMemeData = null;
@@ -136,7 +152,7 @@
         buttonContainer.innerHTML = `
             <span style="font-size: 18px;">📤</span>
             <span>Drop Memes Here</span>
-            <button onclick="closeMemeDB()" style="
+            <button id="close-save-button" style="
                 background: rgba(255,255,255,0.2);
                 border: 1px solid rgba(255,255,255,0.3);
                 color: white;
@@ -147,6 +163,12 @@
                 margin-left: 8px;
             ">✕</button>
         `;
+        
+        // Add event listener for close button
+        const closeButton = buttonContainer.querySelector('#close-save-button');
+        if (closeButton) {
+            closeButton.addEventListener('click', closeMemeDB);
+        }
         
         // Search button that appears on hover
         const searchButton = document.createElement('div');
@@ -171,7 +193,7 @@
             pointer-events: none;
         `;
         searchButton.innerHTML = '🔍 Search Mode';
-        searchButton.onclick = openSearchMode;
+        searchButton.addEventListener('click', openSearchMode);
         
         buttonContainer.appendChild(searchButton);
         floatingButton.appendChild(buttonContainer);
@@ -410,7 +432,7 @@
                     box-sizing: border-box;
                 ">
                 <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    <span onclick="addTag('reaction')" style="
+                    <span class="tag-add-btn" data-tag="reaction" style="
                         background: #EBF8FF;
                         color: #1E40AF;
                         padding: 4px 8px;
@@ -419,7 +441,7 @@
                         cursor: pointer;
                         border: 1px solid #3B82F6;
                     ">+reaction</span>
-                    <span onclick="addTag('funny')" style="
+                    <span class="tag-add-btn" data-tag="funny" style="
                         background: #FEF3C7;
                         color: #92400E;
                         padding: 4px 8px;
@@ -428,7 +450,7 @@
                         cursor: pointer;
                         border: 1px solid #F59E0B;
                     ">+funny</span>
-                    <span onclick="addTag('classic')" style="
+                    <span class="tag-add-btn" data-tag="classic" style="
                         background: #F3E8FF;
                         color: #7C3AED;
                         padding: 4px 8px;
@@ -441,7 +463,7 @@
             </div>
             
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button onclick="cancelSave()" style="
+                <button id="cancel-save-btn" style="
                     background: #F3F4F6;
                     color: #374151;
                     border: 1px solid #D1D5DB;
@@ -450,7 +472,7 @@
                     cursor: pointer;
                     font-weight: 500;
                 ">Cancel</button>
-                <button onclick="saveMeme()" style="
+                <button id="save-meme-btn" style="
                     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
                     color: white;
                     border: none;
@@ -463,6 +485,27 @@
         `;
         
         popup.appendChild(container);
+        
+        // Add event listeners for tag buttons
+        const tagButtons = container.querySelectorAll('.tag-add-btn');
+        tagButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tag = e.target.getAttribute('data-tag');
+                addTag(tag);
+            });
+        });
+        
+        // Add event listeners for save/cancel buttons
+        const cancelBtn = container.querySelector('#cancel-save-btn');
+        const saveBtn = container.querySelector('#save-meme-btn');
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', cancelSave);
+        }
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveMeme);
+        }
         
         // Handle radio button changes
         const radios = container.querySelectorAll('input[name="tag-method"]');
@@ -510,7 +553,7 @@
         let tags = [];
         
         // Show loading state
-        const saveButton = document.querySelector('button[onclick="saveMeme()"]');
+        const saveButton = document.querySelector('#save-meme-btn');
         const originalText = saveButton.textContent;
         saveButton.textContent = '🔄 Saving...';
         saveButton.disabled = true;
@@ -588,7 +631,7 @@
                 formData.append('uploaded_by', 'Bookmarklet User');
                 formData.append('source', 'bookmarklet');
                 
-                const response = await fetch(`${CONFIG.apiBaseUrl}/api/memes/upload`, {
+                const response = await fetch(`${CONFIG.frontendBaseUrl}/api/upload-bookmarklet`, {
                     method: 'POST',
                     body: formData
                 });
@@ -597,13 +640,13 @@
                     throw new Error(`Upload failed: ${response.status}`);
                 }
             } else {
-                // Save URL - use upload-url endpoint
-                const response = await fetch(`${CONFIG.apiBaseUrl}/api/memes/upload-url`, {
+                // Save URL - use frontend API endpoint that proxies to backend
+                const response = await fetch(`${CONFIG.frontendBaseUrl}/api/upload-url-with-tags`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         image_url: currentMemeData.url,
-                        tags: tags,
+                        manual_tags: tags,
                         source_url: window.location.href
                     })
                 });
@@ -699,7 +742,7 @@
             ">
                 <h3 style="margin: 0; font-size: 18px; font-weight: 600;">🔍 Find Memes</h3>
                 <div style="display: flex; gap: 8px;">
-                    <button onclick="switchToSaveMode()" style="
+                    <button id="switch-save-mode-btn" style="
                         background: rgba(255,255,255,0.2);
                         border: 1px solid rgba(255,255,255,0.3);
                         color: white;
@@ -709,7 +752,7 @@
                         font-size: 12px;
                         font-weight: 500;
                     ">📤 Save Mode</button>
-                    <button onclick="closeMemeDB()" style="
+                    <button id="close-search-btn" style="
                         background: rgba(255,255,255,0.2);
                         border: 1px solid rgba(255,255,255,0.3);
                         color: white;
@@ -777,6 +820,19 @@
         
         overlay.appendChild(container);
         document.body.appendChild(overlay);
+        
+        // Add event listeners for search mode buttons
+        const switchSaveModeBtn = container.querySelector('#switch-save-mode-btn');
+        const closeSearchBtn = container.querySelector('#close-search-btn');
+        
+        if (switchSaveModeBtn) {
+            switchSaveModeBtn.addEventListener('click', switchToSaveMode);
+        }
+        
+        if (closeSearchBtn) {
+            closeSearchBtn.addEventListener('click', closeMemeDB);
+        }
+        
         setupSearch();
     }
     
@@ -844,14 +900,14 @@
         `;
         
         try {
-            const response = await fetch(`${CONFIG.apiBaseUrl}/api/memes/search?q=${encodeURIComponent(query)}&limit=20`);
+            const response = await fetch(`${CONFIG.frontendBaseUrl}/api/search-memes?q=${encodeURIComponent(query)}&limit=20`);
             
             if (!response.ok) {
                 throw new Error(`Search failed: ${response.status}`);
             }
             
             const data = await response.json();
-            searchResults = data.data || []; // Backend returns data in ApiResponse.data
+            searchResults = data.data || []; // Frontend API returns data in consistent format
             
             if (searchResults.length === 0) {
                 resultsContainer.innerHTML = `
