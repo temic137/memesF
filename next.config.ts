@@ -70,6 +70,18 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'debug.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'test.com',
+      },
     ],
   },
 

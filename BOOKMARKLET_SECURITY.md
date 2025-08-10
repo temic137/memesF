@@ -92,3 +92,6 @@ Bookmarklets are inherently JavaScript because that's the only way they can work
 The security improvements implemented provide reasonable protection while maintaining the convenience and functionality users expect from a bookmarklet.
 
 
+
+
+
