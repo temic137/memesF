@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       // AI analysis was successful - use only the meaningful content tags
       allTags = [...new Set([
         ...autoTags,
-        ...(manual_tags || []).filter(tag => 
+        ...(manual_tags || []).filter((tag: string) => 
           tag !== 'bookmarklet' && 
           tag !== 'web-saved' && 
           tag !== 'browser-extension'

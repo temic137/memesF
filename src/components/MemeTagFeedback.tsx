@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   ThumbsUp, 
   Plus, 
@@ -274,12 +273,12 @@ export function MemeTagFeedback({
           <label className="text-xs font-medium text-gray-700 mb-1 block">
             Additional Context (optional):
           </label>
-          <Textarea
+          {/* <Textarea
             value={feedback.comments}
             onChange={(e) => setFeedback(prev => ({ ...prev, comments: e.target.value }))}
             placeholder="Why are these tags better? What context is missing?"
             className="h-16 text-xs resize-none"
-          />
+          /> */}
         </div>
 
         {/* Submit Button */}
