@@ -33,6 +33,39 @@
     let searchResults = [];
     let searchTimeout = null;
     
+
+    
+    // For search requests, use JSONP
+    function safeSearch(query) {
+        return new Promise((resolve, reject) => {
+            const callbackName = 'memedb_search_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                resolve(data);
+            };
+            
+            const script = document.createElement('script');
+            script.src = `${CONFIG.frontendBaseUrl}/api/search-memes?q=${encodeURIComponent(query)}&callback=${callbackName}`;
+            script.onerror = () => {
+                delete window[callbackName];
+                reject(new Error('Search request failed'));
+            };
+            
+            document.head.appendChild(script);
+            
+            setTimeout(() => {
+                if (script.parentNode) {
+                    script.parentNode.removeChild(script);
+                }
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    reject(new Error('Search timeout'));
+                }
+            }, 30000);
+        });
+    }
+
     // Main entry point - Smart mode detection and toggle
     function initializeMemeDB() {
         if (document.getElementById(CONFIG.overlayId)) {
@@ -594,7 +627,8 @@
                         }
                     }
                     
-                    const aiResponse = await fetch(`${CONFIG.frontendBaseUrl}/api/analyze-meme`, {
+                    // Try AI tagging, but fail gracefully if CSP blocks it
+                    const response = await fetch(`${CONFIG.frontendBaseUrl}/api/analyze-meme`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
@@ -603,15 +637,32 @@
                         })
                     });
                     
-                    if (aiResponse.ok) {
-                        const aiData = await aiResponse.json();
+                    if (response.ok) {
+                        const aiData = await response.json();
                         tags = aiData.tags || ['meme', 'bookmarklet'];
                     } else {
                         throw new Error('AI analysis failed');
                     }
                 } catch (aiError) {
-                    console.warn('AI tagging failed, using fallback tags:', aiError);
-                    tags = ['meme', 'bookmarklet', 'funny'];
+                    console.warn('AI tagging failed (likely due to CSP), using smart fallback tags:', aiError);
+                    
+                    // Generate smarter fallback tags based on context
+                    const smartTags = ['meme'];
+                    
+                    // Add context-based tags
+                    const hostname = window.location.hostname.toLowerCase();
+                    if (hostname.includes('reddit')) smartTags.push('reddit');
+                    else if (hostname.includes('twitter') || hostname.includes('x.com')) smartTags.push('twitter');
+                    else if (hostname.includes('discord')) smartTags.push('discord');
+                    else if (hostname.includes('instagram')) smartTags.push('instagram');
+                    else smartTags.push('web');
+                    
+                    // Add time-based tags
+                    const hour = new Date().getHours();
+                    if (hour >= 9 && hour <= 17) smartTags.push('work-hours');
+                    else if (hour >= 18 && hour <= 23) smartTags.push('evening');
+                    
+                    tags = smartTags;
                 }
             } else {
                 // Manual tags
@@ -622,38 +673,72 @@
                 }
             }
             
-            if (currentMemeData.file) {
-                // Upload file
-                const formData = new FormData();
-                formData.append('image', currentMemeData.file);
-                formData.append('title', title || '');
-                formData.append('tags', tags.join(','));
-                formData.append('uploaded_by', 'Bookmarklet User');
-                formData.append('source', 'bookmarklet');
-                
-                const response = await fetch(`${CONFIG.frontendBaseUrl}/api/upload-bookmarklet`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Upload failed: ${response.status}`);
+            // Try direct upload first, fall back to redirect if CSP blocks it
+            try {
+                if (currentMemeData.file) {
+                    // Upload file
+                    const formData = new FormData();
+                    formData.append('image', currentMemeData.file);
+                    formData.append('title', title || '');
+                    formData.append('tags', tags.join(','));
+                    formData.append('uploaded_by', 'Bookmarklet User');
+                    formData.append('source', 'bookmarklet');
+                    
+                    const response = await fetch(`${CONFIG.frontendBaseUrl}/api/upload-bookmarklet`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Upload failed: ${response.status}`);
+                    }
+                } else {
+                    // Save URL - use frontend API endpoint that proxies to backend
+                    const response = await fetch(`${CONFIG.frontendBaseUrl}/api/upload-url-with-tags`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            image_url: currentMemeData.url,
+                            manual_tags: tags,
+                            source_url: window.location.href
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Save failed: ${response.status}`);
+                    }
                 }
-            } else {
-                // Save URL - use frontend API endpoint that proxies to backend
-                const response = await fetch(`${CONFIG.frontendBaseUrl}/api/upload-url-with-tags`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image_url: currentMemeData.url,
-                        manual_tags: tags,
-                        source_url: window.location.href
-                    })
-                });
+            } catch (uploadError) {
+                // If CSP blocks the upload, redirect to upload page
+                console.warn('Direct upload blocked by CSP, redirecting to upload page:', uploadError);
                 
-                if (!response.ok) {
-                    throw new Error(`Save failed: ${response.status}`);
+                const uploadUrl = new URL(`${CONFIG.frontendBaseUrl}/upload`);
+                
+                // Add parameters for pre-filling the form
+                if (currentMemeData.url) {
+                    uploadUrl.searchParams.set('imageUrl', currentMemeData.url);
                 }
+                if (title) {
+                    uploadUrl.searchParams.set('title', title);
+                }
+                if (tags.length > 0) {
+                    uploadUrl.searchParams.set('tags', tags.join(','));
+                }
+                uploadUrl.searchParams.set('source', window.location.href);
+                
+                // Open in new tab
+                window.open(uploadUrl.toString(), '_blank');
+                
+                // Show notification about redirect
+                showNotification('🚀 Opening upload page in new tab...', '#3B82F6');
+                
+                // Close the popup after redirect
+                const popup = document.getElementById('tagging-popup');
+                if (popup) {
+                    popup.remove();
+                }
+                currentMemeData = null;
+                return; // Exit the function early
             }
             
             showNotification('✅ Meme saved to database!', '#10B981');
@@ -900,14 +985,34 @@
         `;
         
         try {
-            const response = await fetch(`${CONFIG.frontendBaseUrl}/api/search-memes?q=${encodeURIComponent(query)}&limit=20`);
-            
-            if (!response.ok) {
-                throw new Error(`Search failed: ${response.status}`);
+            // Try JSONP first, fall back to opening search page
+            try {
+                const data = await safeSearch(query);
+                searchResults = data.data || []; // Frontend API returns data in consistent format
+            } catch (searchError) {
+                console.warn('Search blocked by CSP, opening search page:', searchError);
+                
+                // Open search page in new tab with the query
+                const searchUrl = `${CONFIG.frontendBaseUrl}/?search=${encodeURIComponent(query)}`;
+                window.open(searchUrl, '_blank');
+                
+                showNotification('🔍 Opening search in new tab...', '#3B82F6');
+                
+                // Show a helpful message in the results
+                resultsContainer.innerHTML = `
+                    <div style="
+                        text-align: center;
+                        color: #3B82F6;
+                        padding: 40px 20px;
+                        font-size: 14px;
+                    ">
+                        <div style="font-size: 48px; margin-bottom: 12px;">🔍</div>
+                        <div>Search opened in new tab</div>
+                        <div style="margin-top: 8px; font-size: 12px;">Due to site restrictions, search results are shown in a new tab</div>
+                    </div>
+                `;
+                return;
             }
-            
-            const data = await response.json();
-            searchResults = data.data || []; // Frontend API returns data in consistent format
             
             if (searchResults.length === 0) {
                 resultsContainer.innerHTML = `

@@ -6,12 +6,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
     const limit = searchParams.get('limit') || '20';
+    const callback = searchParams.get('callback'); // JSONP callback
 
     if (!query.trim()) {
-      return NextResponse.json({
+      const errorResponse = {
         success: false,
-        error: 'Query parameter is required'
-      }, { status: 400 });
+        error: 'Query parameter is required',
+        data: []
+      };
+      
+      if (callback) {
+        return new NextResponse(`${callback}(${JSON.stringify(errorResponse)});`, {
+          headers: { 'Content-Type': 'application/javascript' }
+        });
+      }
+      
+      return NextResponse.json(errorResponse, { status: 400 });
     }
 
     // Forward the search request to the backend
@@ -34,21 +44,40 @@ export async function GET(request: NextRequest) {
     const result = await response.json();
     
     // Return the result in a consistent format
-    return NextResponse.json({
+    const responseData = {
       success: true,
       data: result.data || result, // Handle different response formats
       message: `Found ${(result.data || result).length} memes`
-    });
+    };
+    
+    // Support JSONP for cross-origin requests
+    if (callback) {
+      return new NextResponse(`${callback}(${JSON.stringify(responseData)});`, {
+        headers: { 'Content-Type': 'application/javascript' }
+      });
+    }
+    
+    return NextResponse.json(responseData);
 
   } catch (error) {
     console.error('❌ Search proxy error:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: error instanceof Error ? error.message : 'Search failed',
-        data: []
-      },
-      { status: 500 }
-    );
+    
+    const { searchParams } = new URL(request.url);
+    const callback = searchParams.get('callback'); // Get callback again for error handling
+    
+    const errorResponse = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Search failed',
+      data: []
+    };
+    
+    // Support JSONP for error responses too
+    if (callback) {
+      return new NextResponse(`${callback}(${JSON.stringify(errorResponse)});`, {
+        headers: { 'Content-Type': 'application/javascript' }
+      });
+    }
+    
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
